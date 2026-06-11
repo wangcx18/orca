@@ -1,0 +1,45 @@
+name: Build Windows Orca
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build Windows unpacked
+        run: pnpm exec electron-builder --config config/electron-builder.config.cjs --win --dir
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: orca-windows-unpacked
+          path: |
+            **/win-unpacked/**
+            **/*Setup*.exe
+            **/*.exe
+            **/*.zip
+            **/*.7z
+            **/*.blockmap
+          if-no-files-found: warn
