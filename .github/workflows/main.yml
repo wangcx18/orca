@@ -6,6 +6,7 @@ on:
 jobs:
   build-windows:
     runs-on: windows-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout source
@@ -26,18 +27,23 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build desktop assets
+        run: pnpm run build:desktop
+
+      - name: Ensure Electron runtime
+        run: pnpm run ensure:electron-runtime
+
       - name: Build Windows unpacked
         run: pnpm exec electron-builder --config config/electron-builder.config.cjs --win --dir
 
-      - name: Upload Windows artifact
+      - name: Show output files
+        shell: pwsh
+        run: |
+          Get-ChildItem -Recurse -Depth 3 dist | Select-Object FullName, Length
+
+      - name: Upload Windows unpacked artifact
         uses: actions/upload-artifact@v4
         with:
           name: orca-windows-unpacked
-          path: |
-            **/win-unpacked/**
-            **/*Setup*.exe
-            **/*.exe
-            **/*.zip
-            **/*.7z
-            **/*.blockmap
-          if-no-files-found: warn
+          path: dist/win-unpacked/**
+          if-no-files-found: error
